@@ -60,7 +60,7 @@ robotCleanAction board dirt robotPos stepSize actionType rType takenTargets =
             | elem robotPos dirtPos = let (i,j) = robotPos in (board, setMatrix dirt i j False,takenTargets)       
             | otherwise =
                 let
-                    distances = bfsInMatrix board [obstacleRep,robotAndKidRep,robotRep,robotLoadedRep,kidRep] robotPos
+                    distances = bfsInMatrix board [obstacleRep,robotAndKidRep,robotRep,robotLoadedRep,kidRep,specialRep] robotPos
                     target = getClosestTarget distances validPos
                     nTaken 
                         | rType == 0 = takenTargets
@@ -89,8 +89,8 @@ robotTargetAction board dirt validCells actualPos stepSize actionType rType take
                         m = length (head board)
                         (_i,_j) = actualPos
                         obstacles 
-                            | actionType == 1 = [obstacleRep,robotAndKidRep,robotRep,robotLoadedRep,kidRep]
-                            | otherwise = [obstacleRep,robotAndKidRep,robotRep,robotLoadedRep]
+                            | actionType == 1 = [obstacleRep,robotAndKidRep,robotRep,robotLoadedRep,kidRep,specialRep]
+                            | otherwise = [obstacleRep,robotAndKidRep,robotRep,robotLoadedRep,specialRep]
                         distances =  bfsInMatrix board obstacles actualPos
                         target = getClosestTarget distances validCells
                         nTaken 
@@ -114,9 +114,12 @@ robotsAloneActions board corrals dirt robotsAlone index rType takenTargets
             robotPos = robotsAlone !! index
             kidsPos = getPositionsInMatrix board [kidRep] 0 0
             corralsPos = getPositionsInMatrix corrals [True] 0 0
-            validKids = filter (\x -> not (elem x corralsPos) ) kidsPos
+            validKids = filter (\x -> not (elem x corralsPos) && not (elem x takenTargets)) kidsPos
+            markedKids = filter (\x -> elem x corralsPos) kidsPos
+            tempBoard = setPositionsInMatrix board specialRep markedKids (length markedKids - 1)
             -- Try to catch a kid first
-            (newBoard,newDirt, newTaken) = robotTargetAction board dirt validKids robotPos robotAloneSteps 0 rType takenTargets
+            (tempBoard2,newDirt, newTaken) = robotTargetAction tempBoard dirt validKids robotPos robotAloneSteps 0 rType takenTargets
+            newBoard = setPositionsInMatrix tempBoard2 kidRep markedKids (length markedKids - 1)
         in 
             robotsAloneActions newBoard corrals newDirt robotsAlone (index+1) rType newTaken
 
@@ -129,7 +132,7 @@ robotsLoadedActions board corrals dirt robotsLoaded index rType takenTargets
             robotLoadedPos = robotsLoaded !! index
             (_i,_j) = robotLoadedPos
             corralsPos = getPositionsInMatrix corrals [True] 0 0
-            validCorrals = filter (\x -> let (i,j) = x in (board !! i !! j) == emptyRep) corralsPos
+            validCorrals = filter (\x -> let (i,j) = x in (board !! i !! j) == emptyRep && not (elem x takenTargets)) corralsPos
             -- Try to carry the kid to a corral first
             (newBoard, newDirt, newTaken) = robotTargetAction board dirt validCorrals robotLoadedPos robotLoadedSteps 1 rType takenTargets
         in
@@ -144,9 +147,12 @@ robotsAndKidsActions board corrals dirt robotsAndKids index rType takenTargets
             robotPos = robotsAndKids !! index
             kidsPos = getPositionsInMatrix board [kidRep] 0 0
             corralsPos = getPositionsInMatrix corrals [True] 0 0
-            validKids = filter (\x -> not (elem x corralsPos) ) kidsPos
+            validKids = filter (\x -> not (elem x corralsPos) && not (elem x takenTargets)) kidsPos
+            markedKids = filter (\x -> elem x corralsPos) kidsPos
+            tempBoard = setPositionsInMatrix board specialRep markedKids (length markedKids - 1)
             -- Try to catch a kid first
-            (newBoard,newDirt,newTaken) = robotTargetAction board dirt validKids robotPos robotAloneSteps 2 rType takenTargets
+            (tempBoard2,newDirt,newTaken) = robotTargetAction tempBoard dirt validKids robotPos robotAloneSteps 2 rType takenTargets
+            newBoard = setPositionsInMatrix tempBoard2 kidRep markedKids (length markedKids - 1)
         in 
             robotsAndKidsActions newBoard corrals newDirt robotsAndKids (index+1) rType newTaken
 
@@ -167,7 +173,7 @@ robotActions board corrals dirt rType gen =
         (robotsLoaded,gen2)
             | rType == 0 =  shuffleList tempRobotsLoaded gen1
             | otherwise = (tempRobotsLoaded,gen1)
-
+        
         (boardA, dirtA, takenA) = robotsAloneActions board corrals dirt robotsAlone 0 rType []
         (boardB,takenB) = robotsAndKidsActions boardA corrals dirtA robotsAndKids 0 rType takenA
         (newBoard,newDirt,takenC) = robotsLoadedActions boardB corrals dirtA robotsLoaded 0 rType takenB

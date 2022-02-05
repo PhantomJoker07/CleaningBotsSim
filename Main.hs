@@ -11,4 +11,5 @@ main n m t kidsCount robotCount robotType seed turnsCount = do
 --Example
 test:: IO()
 test = do
-    main 5 5 2 4 3 1 7 10
+    main 10 10 2 15 5 1 2 100
+    

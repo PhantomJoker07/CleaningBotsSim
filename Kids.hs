@@ -65,7 +65,8 @@ generateDirtRandomly board corrals dirt kidOldPos kidNewPos gen =
 
         --determine how many dirt will be generated taking in count the avaliable cells and de max dirt determined above
         tempValidPosToGenerate = getPositionsInMatrix board [emptyRep] 0 0
-        validPosToGenerate = filter (\x -> let (i,j) = x in not (dirt !! i !! j) && not (corrals !! i !! j)) tempValidPosToGenerate
+        temp2ValidPosToGenerate = filter (\x -> let (i,j) = x in not (dirt !! i !! j) && not (corrals !! i !! j)) tempValidPosToGenerate
+        validPosToGenerate = filter (\x -> elem x cuadricleVals) temp2ValidPosToGenerate
         maxDirtToGenerate = minimum [length validPosToGenerate,maxDirtDef]
         (dirtToGenerateCount,gen1) = randomR (0, maxDirtToGenerate) gen0::(Int, StdGen)
         
@@ -97,7 +98,7 @@ moveSelectedKidsRandomly board corrals dirt kToMoveList index gen
                 | directionContent == obstacleRep = isValidDirectionForMoveObstacles board corrals dirt i j dirI dirJ --If the value in said direction is an obstacle check if it can be moved
                 | otherwise = False
             (newBoard,itMoved)
-                | directionContent == obstacleRep && isMoveObstacles = (moveObstacles board (i,j) (dirI,dirJ),True)--Said direction has a movable obstacle, move it
+                | directionContent == obstacleRep && isMoveObstacles = (moveObstacles board (i,j) (dirI,dirJ),False)--Said direction has a movable obstacle, move it
                 | directionContent == emptyRep = (moveMatrixValue board (i,j) (_i,_j) emptyRep, True)--Said direction is empty, move towards it
                 | otherwise = (board,False)
             (newDirt,newGen)
@@ -111,7 +112,9 @@ moveRandomKids:: [[String]] -> [[Bool]] -> [[Bool]] -> Int -> StdGen -> ([[Strin
 moveRandomKids board corrals dirt kidsCount gen =
     let
         (maxKidsToMoveCount,gen0) = randomR (0, kidsCount) gen::(Int, StdGen)
-        kToMoveList = getPositionsInMatrix board [kidRep] 0 0
+        tempKToMoveList = getPositionsInMatrix board [kidRep] 0 0
+        corralsPos = getPositionsInMatrix corrals [True] 0 0
+        kToMoveList =  filter (\x -> not (elem x corralsPos) ) tempKToMoveList
         (randKToMoveList,gen1) = shuffleList kToMoveList gen0
         kToMoveCount = minimum [length kToMoveList, maxKidsToMoveCount] - 1
         (newBoard, newDirt, newGen) = moveSelectedKidsRandomly board corrals dirt randKToMoveList kToMoveCount gen1
