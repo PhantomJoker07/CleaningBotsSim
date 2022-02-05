@@ -29,5 +29,5 @@ distribución
 turnsCount: cantidad de turnos a simular.
 ## Ejemplo:
 ```bash
-Enviroments> main 5 5 1 2 3 1 0 10
+main 5 5 1 2 3 1 0 10
 ```
