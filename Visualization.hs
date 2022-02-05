@@ -3,18 +3,6 @@ module Visualization where
 import Representations
 import Tools
 
---  R_K  ->  robot carring a kid
---  R|K  ->  robot and kid
---   R   ->  robot
---   K   ->  kid
---  [O]  ->  obstacle
- 
---    dirt            corral           normal    
---    _ _ _            _ _ _            _ _ _    
---  |       |        |C     C|        |       | 
---  |  R_K  |        |   K   |        |  [O]  | 
---  |*_ _ _*|        |C_ _ _C|        | _ _ _ | 
-
 
 getCeiling:: Int -> String
 getCeiling n
@@ -162,3 +150,4 @@ printEnd dirtStatus =
         print ("Maximum dirt: " ++ maxPercent ++ " %")
         print ("Minimum dirt: " ++ minPercent ++ " %")
         print ("Turns over threshold: " ++  percentThreshold ++ " %")
+        putStr "\r\n\n"

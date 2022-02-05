@@ -6,28 +6,28 @@ import Control.Monad
 import Control.Monad.ST
 import Data.STRef
 
-
+--Creates a list of size "n" with the value "v" in all the positions
 list :: Int -> a -> [a]
 list n v | n == 0 = [] | otherwise = v:list (n-1) v
 
-
+--Returns a copy of the original list with the value of the ith position changed to "value"
 setList :: [a] -> Int -> a -> [a]
 setList (x:xs) i value | i == 0 = (value:xs) | otherwise = x:(setList xs (i-1) value)
 
-
+--Returns a copy of the original list with all the values equal to "y" removed
 removeFromList::Eq a => [a] -> a -> [a]
 removeFromList [] y = []
 removeFromList (x:xs) y | x == y = xs | otherwise = (x:(removeFromList xs y))
 
-
+--Creates a matrix (a list of lists) of size "n * m" with the value "v" in all the positions
 matrix :: Int -> Int -> a -> [[a]]
 matrix n m v | n == 0 = [] | otherwise = list m v: matrix(n-1) m v
 
-
+--Returns a copy of the original matrix with the value of the position (i,j) changed to "value"
 setMatrix :: [[a]] -> Int -> Int -> a -> [[a]]
 setMatrix (xs:xxs) i j value | i == 0 = (setList xs j value):xxs | otherwise = xs:(setMatrix xxs (i-1) j value)
 
-
+--Returns a list of all the values contained in the original matrix
 matrixToList :: [[a]] -> [a] -> Int -> Int -> [a]
 matrixToList mtx list i j  =
     let
@@ -42,7 +42,7 @@ matrixToList mtx list i j  =
         if _i == -1 then [dat]
         else matrixToList mtx (dat:list) _i _j 
 
-
+--Returns a copy of the original matrix with the values of the positions indicated in the list ¨positions" changed to "value" 
 setPositionsInMatrix :: [[a]] -> a ->  [(Int,Int)] -> Int -> [[a]]
 setPositionsInMatrix matrix value positions index | index < 0 = matrix | otherwise =
     let
@@ -51,7 +51,7 @@ setPositionsInMatrix matrix value positions index | index < 0 = matrix | otherwi
     in 
         setMatrix boardNew x y value
 
-
+--Returns a list with the positions in the original matrix wich contained a value listed in "cellType"
 getPositionsInMatrix :: Eq a => [[a]] -> [a] -> Int -> Int -> [(Int,Int)]
 getPositionsInMatrix matrix cellType i j  =
     let
@@ -69,13 +69,21 @@ getPositionsInMatrix matrix cellType i j  =
         else if dat `elem` cellType then (i,j): getPositionsInMatrix matrix cellType _i _j 
         else getPositionsInMatrix matrix cellType _i _j
 
-
+--Tells if the position (x,y) is inside the given matrix
 isInsideMatrix :: [[a]] -> Int -> Int -> Bool
 isInsideMatrix matrix x y
     | x >= 0 && x < length matrix && y >= 0 && y < length (head matrix) = True
     | otherwise = False
 
+--Get the vectors representing 4 avaliable directions
+getDirection:: Int -> (Int,Int)
+getDirection val 
+    | val == 0 = (0,1)
+    | val == 1 = (0,-1)
+    | val == 2 = (1,0)
+    | otherwise = (-1,0)
 
+--Returns copy of the original matrix switching the position of the value located in "source" to "destination" while leaving in "source" the value "emptyValue"
 moveMatrixValue :: [[a]] -> (Int,Int) -> (Int,Int) -> a -> [[a]]
 moveMatrixValue matrix source destination emptyValue =
     let
@@ -87,7 +95,7 @@ moveMatrixValue matrix source destination emptyValue =
     in 
         ansMatrix 
 
-
+--Returns copy of the original matrix with a number equal to "quantity" of values set to "cellType" in random positions of the board that had a value listed in "validCells"
 generateObjectsRandomly::Eq a => [[a]] -> Int -> a -> [a] -> StdGen-> ([[a]], StdGen)
 generateObjectsRandomly board quantity cellType validCells gen | quantity == 0 = (board,gen) | otherwise =
     let
@@ -100,7 +108,7 @@ generateObjectsRandomly board quantity cellType validCells gen | quantity == 0 =
     in
         (setMatrix boardNew x y cellType, gen3)
 
-
+--Returns a copy of the original list with the position of the values switched randomly
 shuffleList :: [a] -> StdGen -> ([a],StdGen)
 shuffleList xs gen = runST (do
         g <- newSTRef gen
@@ -122,19 +130,19 @@ shuffleList xs gen = runST (do
     newArray :: Int -> [a] -> ST s (STArray s Int a)
     newArray n xs =  newListArray (1,n) xs
 
-
+--Implementation of a for cicle
 for :: Int -> Int -> Int -> a -> (a -> a) -> a
 for val_init val_end inc input body =
     if val_init < val_end then
         for (val_init + inc) val_end inc (body input) body
     else input
 
-
+--Percent of x in y in a float type
 percent :: Int -> Int -> Float
 percent x y =   100 * ( a / b )
   where a = fromIntegral x :: Float
         b = fromIntegral y :: Float
 
-
+--Returns the mean pf a list of floats
 mean :: [Float] -> Float
 mean list = sum list / fromIntegral (length list)

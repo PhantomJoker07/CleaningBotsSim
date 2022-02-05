@@ -115,6 +115,7 @@ robotsAloneActions board corrals dirt robotsAlone index rType takenTargets
             kidsPos = getPositionsInMatrix board [kidRep] 0 0
             corralsPos = getPositionsInMatrix corrals [True] 0 0
             validKids = filter (\x -> not (elem x corralsPos) ) kidsPos
+            -- Try to catch a kid first
             (newBoard,newDirt, newTaken) = robotTargetAction board dirt validKids robotPos robotAloneSteps 0 rType takenTargets
         in 
             robotsAloneActions newBoard corrals newDirt robotsAlone (index+1) rType newTaken
@@ -129,6 +130,7 @@ robotsLoadedActions board corrals dirt robotsLoaded index rType takenTargets
             (_i,_j) = robotLoadedPos
             corralsPos = getPositionsInMatrix corrals [True] 0 0
             validCorrals = filter (\x -> let (i,j) = x in (board !! i !! j) == emptyRep) corralsPos
+            -- Try to carry the kid to a corral first
             (newBoard, newDirt, newTaken) = robotTargetAction board dirt validCorrals robotLoadedPos robotLoadedSteps 1 rType takenTargets
         in
             robotsLoadedActions newBoard corrals newDirt robotsLoaded (index+1) rType newTaken
@@ -143,6 +145,7 @@ robotsAndKidsActions board corrals dirt robotsAndKids index rType takenTargets
             kidsPos = getPositionsInMatrix board [kidRep] 0 0
             corralsPos = getPositionsInMatrix corrals [True] 0 0
             validKids = filter (\x -> not (elem x corralsPos) ) kidsPos
+            -- Try to catch a kid first
             (newBoard,newDirt,newTaken) = robotTargetAction board dirt validKids robotPos robotAloneSteps 2 rType takenTargets
         in 
             robotsAndKidsActions newBoard corrals newDirt robotsAndKids (index+1) rType newTaken
@@ -151,16 +154,23 @@ robotsAndKidsActions board corrals dirt robotsAndKids index rType takenTargets
 robotActions :: [[String]] -> [[Bool]] -> [[Bool]] -> Int -> StdGen -> ([[String]],[[Bool]],StdGen)
 robotActions board corrals dirt rType gen = 
     let
-        robotsAlone = getPositionsInMatrix board [robotRep] 0 0
-        robotsAndKids =  getPositionsInMatrix board [robotAndKidRep] 0 0
-        robotsLoaded = getPositionsInMatrix board [robotLoadedRep] 0 0
-        (shufledRobotsAlone, gen0) = shuffleList robotsAlone gen
-        (shufledRobotsAndKids, gen1) = shuffleList robotsAndKids gen0
-        (shufledRobotsLoaded, gen2) = shuffleList robotsLoaded gen1
-        
-        (boardA, dirtA, takenA) = robotsAloneActions board corrals dirt shufledRobotsAlone 0 rType []
-        (boardB,takenB) = robotsAndKidsActions boardA corrals dirtA shufledRobotsAndKids 0 rType takenA
-        (newBoard,newDirt,takenC) = robotsLoadedActions boardB corrals dirtA shufledRobotsLoaded 0 rType takenB
-        newGen = gen2
+        tempRobotsAlone = getPositionsInMatrix board [robotRep] 0 0
+        tempRobotsAndKids =  getPositionsInMatrix board [robotAndKidRep] 0 0
+        tempRobotsLoaded = getPositionsInMatrix board [robotLoadedRep] 0 0
+
+        (robotsAlone,gen0)
+            | rType == 0 = shuffleList tempRobotsAlone gen
+            | otherwise = (tempRobotsAlone,gen)
+        (robotsAndKids,gen1)
+            | rType == 0 = shuffleList tempRobotsAndKids gen0
+            | otherwise = (tempRobotsAndKids,gen0)
+        (robotsLoaded,gen2)
+            | rType == 0 =  shuffleList tempRobotsLoaded gen1
+            | otherwise = (tempRobotsLoaded,gen1)
+
+        (boardA, dirtA, takenA) = robotsAloneActions board corrals dirt robotsAlone 0 rType []
+        (boardB,takenB) = robotsAndKidsActions boardA corrals dirtA robotsAndKids 0 rType takenA
+        (newBoard,newDirt,takenC) = robotsLoadedActions boardB corrals dirtA robotsLoaded 0 rType takenB
+        newGen = gen
     in
         (newBoard,newDirt,newGen)

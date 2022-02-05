@@ -2,11 +2,11 @@ module Bfs where
 
 import Tools
 
-
+--Get the positions adjacents to (i,j) of a nxm dimensions matrix (adjacents considering only four directions)
 adjacents :: Int -> Int -> Int -> Int -> [(Int, Int)]
 adjacents i j n m = [(x,y) | (x,y) <- [(i,j+1),(i,j-1),(i-1,j),(i+1,j)], 0 <= x && x < n && 0 <= y && y < m]
 
-
+--Find all the valid neighbors adjacents to the position u of the matrix without considering the types specified in blockers
 findNeighbors :: Eq a => [[a]] -> [a] -> (Int,Int) -> [(Int,Int)]
 findNeighbors matrix blockers u =
     let
@@ -18,7 +18,7 @@ findNeighbors matrix blockers u =
     in
         filter (\x -> not (x `elem` bPos)) adj
 
-
+--Generate the distances matrix after doing a bfs algorithm in the martix starting in the position u and ignoring the blockers
 bfsInMatrix :: Eq a=> [[a]] -> [a] -> (Int,Int) -> [[Int]]
 bfsInMatrix mtx blockers u =
     let
@@ -30,7 +30,7 @@ bfsInMatrix mtx blockers u =
     in
         doBfs [] mtx blockers [u] distances
 
-
+--Bfs algorithm
 doBfs :: Eq a => [(Int,Int)] -> [[a]] -> [a] -> [(Int,Int)] -> [[Int]] -> [[Int]]
 doBfs _seen mtx blockers queue distance
     | queue == [] = distance
@@ -48,7 +48,7 @@ doBfs _seen mtx blockers queue distance
         in
             doBfs new_seen mtx blockers new_queue new_distance
 
-
+--Get the shortest path starting in the first position of path and ending in the starting position of the distances matrix (the one with distance 0)
 getShortestPath:: [[Int]] -> [(Int,Int)] -> [(Int,Int)]
 getShortestPath distancesMatrix path =
     let
@@ -69,7 +69,7 @@ getShortestPath distancesMatrix path =
     in
          answer 
 
-
+--Get te index of the minimum value of the distance matrix from the ones located in the list of possible targets
 getMinValueIndex ::  [[Int]] -> [(Int,Int)] -> Int -> Int -> Int -> Int
 getMinValueIndex distancesMatrix possibilities indexPos min indexMin =
     let
@@ -84,7 +84,7 @@ getMinValueIndex distancesMatrix possibilities indexPos min indexMin =
     in
         ans
 
-
+--Get the closest target to the starting position of the distances matrix from a list of possible targets
 getClosestTarget :: [[Int]] -> [(Int,Int)] -> (Int,Int)
 getClosestTarget distancesMatrix possibilities =
     let
@@ -99,7 +99,7 @@ getClosestTarget distancesMatrix possibilities =
     in 
         target
 
-
+--Get the next position of the path considering the existence of an step size while traversing said path
 getNextCell :: [(Int,Int)] -> Int -> (Int,Int)
 getNextCell path stepSize =
     let

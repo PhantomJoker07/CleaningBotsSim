@@ -4,15 +4,7 @@ import System.Random
 import Representations
 import Tools
 
-
-getDirection:: Int -> (Int,Int)
-getDirection val 
-    | val == 0 = (0,1)
-    | val == 1 = (0,-1)
-    | val == 2 = (1,0)
-    | otherwise = (-1,0)
      
-
 isValidDirectionForMoveObstacles:: [[String]] -> [[Bool]] -> [[Bool]] -> Int -> Int -> Int -> Int -> Bool
 isValidDirectionForMoveObstacles board corrals dirt i j dirI dirJ 
     | not (isInsideMatrix board (i+dirI) (j+dirJ)) = False
@@ -61,21 +53,23 @@ getCuadricleVals cuadricleIndex index position directions
 generateDirtRandomly :: [[String]] -> [[Bool]] -> [[Bool]] -> (Int,Int) -> (Int,Int) -> StdGen -> ([[Bool]],StdGen)
 generateDirtRandomly board corrals dirt kidOldPos kidNewPos gen =
     let
-        (cuadricleIndex,gen0) = randomR (0, 8) gen::(Int, StdGen)
-        cuadricleVals= getCuadricleVals cuadricleIndex 0 kidOldPos []
+        (cuadricleIndex,gen0) = randomR (0, 8) gen::(Int, StdGen)  --determine wich cuadricle of size 3x3 we use to generate dirt
+        cuadricleVals= getCuadricleVals cuadricleIndex 0 kidOldPos [] --get the positions in the board corresponding to the selected cuadricle
         kidsPos = getPositionsInMatrix board [kidRep] 0 0
-        cuadricleKidsPos = filter (\x -> not (x == kidNewPos ) && (elem x cuadricleVals)) kidsPos
+        cuadricleKidsPos = filter (\x -> not (x == kidNewPos ) && (elem x cuadricleVals)) kidsPos --get the positions of the kids in the cuadricle
         cuadricleKidsCount = length cuadricleKidsPos
-        maxDirtDef
+        maxDirtDef  --max dirt we can generate in said cuadricle
             | cuadricleKidsCount == 0 = 1
             | cuadricleKidsCount == 1 = 3
             | otherwise = 6
 
+        --determine how many dirt will be generated taking in count the avaliable cells and de max dirt determined above
         tempValidPosToGenerate = getPositionsInMatrix board [emptyRep] 0 0
         validPosToGenerate = filter (\x -> let (i,j) = x in not (dirt !! i !! j) && not (corrals !! i !! j)) tempValidPosToGenerate
         maxDirtToGenerate = minimum [length validPosToGenerate,maxDirtDef]
         (dirtToGenerateCount,gen1) = randomR (0, maxDirtToGenerate) gen0::(Int, StdGen)
         
+        --generate the new dirt
         tempBoard = setPositionsInMatrix board specialRep validPosToGenerate (length validPosToGenerate - 1)
         (tempBoard2,newGen) = generateObjectsRandomly tempBoard dirtToGenerateCount dirtRep [specialRep] gen1 
         newPos = getPositionsInMatrix tempBoard2 [dirtRep] 0 0
@@ -96,19 +90,18 @@ moveSelectedKidsRandomly board corrals dirt kToMoveList index gen
             _i = i+dirI
             _j = j+dirJ
             directionContent
-                | corrals !! i !! j = specialRep
-                | not (isInsideMatrix board _i _j) = specialRep
-                | not (corrals !! _i !! _j) && not (dirt !! _i !! _j) = board !! _i !! _j
+                | not (isInsideMatrix board _i _j) = specialRep --Said direction is outside of the matrix, mark it as invalid
+                | not (corrals !! _i !! _j) && not (dirt !! _i !! _j) = board !! _i !! _j  --There is no corral or a dirt in said direction, save the content
                 | otherwise = specialRep
             isMoveObstacles
-                | directionContent == obstacleRep = isValidDirectionForMoveObstacles board corrals dirt i j dirI dirJ
+                | directionContent == obstacleRep = isValidDirectionForMoveObstacles board corrals dirt i j dirI dirJ --If the value in said direction is an obstacle check if it can be moved
                 | otherwise = False
             (newBoard,itMoved)
-                | directionContent == obstacleRep && isMoveObstacles = (moveObstacles board (i,j) (dirI,dirJ),True)
-                | directionContent == emptyRep = (moveMatrixValue board (i,j) (_i,_j) emptyRep, True)
+                | directionContent == obstacleRep && isMoveObstacles = (moveObstacles board (i,j) (dirI,dirJ),True)--Said direction has a movable obstacle, move it
+                | directionContent == emptyRep = (moveMatrixValue board (i,j) (_i,_j) emptyRep, True)--Said direction is empty, move towards it
                 | otherwise = (board,False)
             (newDirt,newGen)
-                | itMoved = generateDirtRandomly newBoard corrals dirt (i,j) (_i,_j) gen0
+                | itMoved = generateDirtRandomly newBoard corrals dirt (i,j) (_i,_j) gen0 --If the kid moved proceed to generate the dirt randomly
                 | otherwise = (dirt,gen0)
         in
             moveSelectedKidsRandomly newBoard corrals newDirt kToMoveList (index-1) newGen
